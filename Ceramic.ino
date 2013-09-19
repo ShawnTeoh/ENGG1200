@@ -4,6 +4,8 @@
 #define temp_pin2 1
 #define flow_pin1 2
 #define flow_pin2 3
+#define servo_pin1 9
+#define servo_pin2 10
 #define end_pin 11
 #define target_temp 28
 
@@ -12,17 +14,14 @@ float temp1;
 float temp2;
 
 // Flow meters
-float calibrationFactor=4.5;
 volatile byte pulse_count1;
 volatile byte pulse_count2;
 float flow_rate1;
 float flow_rate2;
-unsigned int flow_mlitres1;
-unsigned int flow_mlitres2;
-unsigned long total_mlitres1;
-unsigned long total_mlitres2;
-unsigned long old_time1;
-unsigned long old_time2;
+unsigned int flow_litres1;
+unsigned int flow_litres2;
+unsigned long total_litres;
+unsigned long old_time;
 
 // Servo
 Servo servo1;
@@ -32,8 +31,8 @@ void setup(){
   Serial.begin(9600);
   analogReference(EXTERNAL);
   
-  servo1.attach(9);
-  servo2.attach(10);
+  servo1.attach(servo_pin1);
+  servo2.attach(servo_pin2);
   
   pinMode(end_pin, INPUT);
   digitalWrite(end_pin, HIGH);
@@ -42,12 +41,10 @@ void setup(){
   pulse_count2=0;
   flow_rate1=0.0;
   flow_rate2=0.0;
-  flow_mlitres1=0;
-  flow_mlitres2=0;
-  total_mlitres1=0;
-  total_mlitres2=0;
-  old_time1=0;
-  old_time2=0;
+  flow_litres1=0;
+  flow_litres2=0;
+  total_litres=0;
+  old_time=0;
   pinMode(flow_pin1, INPUT);
   pinMode(flow_pin2, INPUT);
   attachInterrupt(0, pulse_counter1, FALLING);
@@ -83,53 +80,54 @@ void run_servo(int time,int drc){
   }
 }
 
-void pulse_counter1()
-{
+void pulse_counter1(){
   pulse_count1++;
 }
 
-void pulse_counter2()
-{
+void pulse_counter2(){
   pulse_count2++;
 }
 
 void loop(){
   temp1=temp_get(temp_pin1);
+  temp2=temp_get(temp_pin2);
   Serial.print(temp1); Serial.println(" degrees C");
-  delay(1000);
+  Serial.print(temp2); Serial.println(" degrees C");
+  delay(100);
   
-  if((millis() - old_time1) > 1000){ 
+  if((millis()-old_time) > 1000){ 
     detachInterrupt(0);
+    detachInterrupt(1);
+    
+    flow_litres1=pulse_count1/3300;
+    flow_litres2=pulse_count2/3300;
+    flow_rate1=flow_litres1/((millis()-old_time)/60);
+    flow_rate2=flow_litres2/((millis()-old_time)/60);
 
-    flow_rate1=((1000.0/(millis()-old_time1))*pulse_count1)/calibrationFactor;
+    old_time=millis();
+    
+    total_litres+=flow_litres1;
+    total_litres+=flow_litres2;
 
-    old_time1=millis();
-
-    flow_mlitres1=(flow_rate1/60)*1000;
-
-    total_mlitres1 += flow_mlitres1;
-    total_mlitres2 += flow_mlitres2;
-
-    unsigned int frac;
-
-    Serial.println(int(flow_rate1));
-
-    frac = (flow_rate1-int(flow_rate1))*10;
-    Serial.println(frac, DEC) ;
-    Serial.println(flow_mlitres1);
-
-    Serial.println(total_mlitres1);
-    Serial.println(total_mlitres2);
+    Serial.print(flow_rate1); Serial.println(" litres/min");
+    Serial.print(flow_rate2); Serial.println(" litres/min");
+    Serial.print(total_litres); Serial.println(" litres");
+    
+    pulse_count1=0;
+    pulse_count2=0;
     attachInterrupt(0, pulse_counter1, FALLING);
+    attachInterrupt(1, pulse_counter2, FALLING);
   }
-
+  
+  // TODO: Translate control algorithm into Arduino code
   if (temp1 >= target_temp){
     run_servo(1000,1);
   } else if (temp1 <= 26){
     run_servo(2000,0);
   }
 
-  if (digitalRead(end_pin)==LOW){
+  if (digitalRead(end_pin) == LOW){
+    // TODO: Shut down sequence
     while(1);
   }
 }
