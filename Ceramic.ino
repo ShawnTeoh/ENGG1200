@@ -22,13 +22,13 @@ float temp_hot_avr;
 float temp_out;
 
 // Flow meters
-volatile byte pulse_count1;
-volatile byte pulse_count2;
+volatile unsigned int pulse_count1;
+volatile unsigned int pulse_count2;
 float flow_rate_cld;
 float flow_rate_hot;
-unsigned int flow_litres1;
-unsigned int flow_litres2;
-unsigned long total_litres;
+float flow_litres1;
+float flow_litres2;
+float total_litres;
 unsigned long old_time;
 
 // Servo
@@ -60,12 +60,14 @@ void setup(){
   pulse_count2=0;
   flow_rate_cld=0.0;
   flow_rate_hot=0.0;
-  flow_litres1=0;
-  flow_litres2=0;
-  total_litres=0;
+  flow_litres1=0.0;
+  flow_litres2=0.0;
+  total_litres=0.0;
   old_time=0;
   pinMode(flow_pin_cld, INPUT);
   pinMode(flow_pin_hot, INPUT);
+  digitalWrite(flow_pin_cld,HIGH);
+  digitalWrite(flow_pin_hot,HIGH);
   attachInterrupt(0, pulse_counter1, FALLING);
   attachInterrupt(1, pulse_counter2, FALLING);
   
@@ -119,8 +121,12 @@ void loop(){
 
     flow_litres1=pulse_count1/3300;
     flow_litres2=pulse_count2/3300;
-    flow_rate_cld=flow_litres1/((millis()-old_time)/60); // Used var
-    flow_rate_hot=flow_litres2/((millis()-old_time)/60); // Used var
+    
+    flow_litres1=flow_litres1/old_time*60;
+    flow_litres2=flow_litres2/old_time*60;
+    
+    flow_rate_cld=flow_litres1*60; // Used var
+    flow_rate_hot=flow_litres2*60; // Used var
 
     old_time=millis();
 
@@ -141,7 +147,7 @@ void loop(){
   float temp_ratio_tmp1=(target_temp-temp_cld_avr)/(temp_hot_avr-target_temp);
   float temp_ratio_tmp2=temp_ratio_tmp1/(temp_ratio_tmp1+1);
   float temp_ratio=temp_ratio_tmp2/(1-temp_ratio_tmp2); // Used var
-  float flow_ratio=(flow_rate_hot*60)/(flow_rate_cld*60); // Used var
+  float flow_ratio=(flow_rate_hot/60)/(flow_rate_cld/60); // Used var
 
   if (temp_ratio < flow_ratio){
     hot_ratio=temp_ratio/flow_ratio; // Output var
