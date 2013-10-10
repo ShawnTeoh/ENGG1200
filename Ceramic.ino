@@ -7,19 +7,19 @@
 #define temp_pin_out 4
 #define flow_pin_cld 2
 #define flow_pin_hot 3
+#define target_pin 8
 #define servo_pin1 9
 #define servo_pin2 10
 #define end_pin 11
-#define target_temp 28
 
 // Temperature sensors
+int target_temp;
 float temp_cld1;
 float temp_cld2;
 float temp_cld_avr;
 float temp_hot1;
 float temp_hot2;
 float temp_hot_avr;
-float temp_out;
 
 // Flow meters
 volatile unsigned int pulse_count1;
@@ -36,6 +36,7 @@ Servo servo1;
 Servo servo2;
 int pos1;
 int pos2;
+int angle;
 
 // Control system
 float cld_ratio;
@@ -50,10 +51,14 @@ void setup(){
   servo2.attach(servo_pin2);
   pos1=0;
   pos2=0;
+  
+  // Target temperature
+  pinMode(target_pin, INPUT);
+  digitalWrite(target_pin, LOW);
 
   // TWS
   pinMode(end_pin, INPUT);
-  digitalWrite(end_pin, HIGH);
+  digitalWrite(end_pin, LOW);
 
   // Flow meters
   pulse_count1=0;
@@ -80,6 +85,18 @@ float mapf(float x,float in_min,float in_max,float out_min,float out_max){
   return (x-in_min)*(out_max-out_min)/(in_max-in_min)+out_min;
 }
 
+int round_angle(float ratio){
+  float angle_tmp=ratio*75;
+  int angle_trunc=(int) angle_tmp;
+  float diff=angle_tmp-angle_trunc;
+  
+  if (diff <= 0.5){
+    return floor(angle_tmp);
+  } else{
+    return ceil(angle_tmp);
+  }
+}
+
 float temp_get(int pin){
   float voltage=0;
 
@@ -102,11 +119,16 @@ void pulse_counter2(){
 }
 
 void loop(){
+  if (digitalRead(target_pin) == LOW){
+    int target_temp=25;
+  } else{
+    int rarget_temp=30;
+  }
+
   temp_cld1=temp_get(temp_pin_cld1);
   temp_cld2=temp_get(temp_pin_cld2);
   temp_hot1=temp_get(temp_pin_hot1);
   temp_hot2=temp_get(temp_pin_hot2);
-  temp_out=temp_get(temp_pin_out);
 
   temp_cld_avr=(temp_cld1+temp_cld2)/2; // Used var
   temp_hot_avr=(temp_hot1+temp_hot2)/2; // Used var
@@ -151,38 +173,42 @@ void loop(){
 
   if (temp_ratio < flow_ratio){
     hot_ratio=temp_ratio/flow_ratio; // Output var
+    angle=round_angle(hot_ratio); // Output var
     cld_ratio=1.0; // Output var
-  } else {
+  } else{
     cld_ratio=flow_ratio/temp_ratio; // Output var
+    angle=round_angle(cld_ratio); // Output var
     hot_ratio=1.0; // Output var
   }
+  
+  Serial.print(angle);Serial.println(" angle");
 
-  // 90 is fully open, 0 is fully closed
+  // 75 is fully open, 0 is fully closed
   if (cld_ratio == 1.0){
-    servo1.write(90);
-    pos1=90;
+    servo1.write(75);
+    pos1=75;
   } else{
-    servo1.write(90);
-    pos1=90;
+    servo1.write(angle);
+    pos1=angle;
   }
 
   if (hot_ratio == 1.0){
-    servo2.write(90);
-    pos2=90;
+    servo2.write(75);
+    pos2=75;
   } else{
-    servo2.write(90);
-    pos2=90;
+    servo2.write(angle);
+    pos2=angle;
   }
 
   // Prevent both valves from closing at same time
   if (pos1 == 0 && pos2 == 0){
-    servo1.write(45);
-    pos1=45;
-    servo2.write(45);
-    pos2=45;
+    servo1.write(38);
+    pos1=38;
+    servo2.write(38);
+    pos2=38;
   }
 
-  if (digitalRead(end_pin) == LOW){
+  if (digitalRead(end_pin) == HIGH){
     // TODO: Shut down sequence
     servo1.write(0);
     servo2.write(0);
