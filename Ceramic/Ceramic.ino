@@ -4,7 +4,7 @@
 #define temp_pin_cld2 1
 #define temp_pin_hot1 2
 #define temp_pin_hot2 3
-#define temp_pin_out 4
+
 #define flow_pin_cld 2
 #define flow_pin_hot 3
 #define target_pin 8
@@ -130,11 +130,11 @@ void loop(){
   temp_hot1=temp_get(temp_pin_hot1);
   temp_hot2=temp_get(temp_pin_hot2);
 
-  temp_cld_avr=(temp_cld1+temp_cld2)/2; // Used var
+  temp_cld_avr=temp_cld2; // Used var
+  //temp_cld_avr=(temp_cld1+temp_cld2)/2; // Used var
   temp_hot_avr=(temp_hot1+temp_hot2)/2; // Used var
   Serial.print(temp_cld_avr); Serial.println(" degrees C (cold)");
   Serial.print(temp_hot_avr); Serial.println(" degrees C (hot)");
-  Serial.print(temp_out); Serial.println(" degrees C (out)");
   delay(100);
 
   if((millis()-old_time) > 1000){ 
@@ -199,6 +199,7 @@ void loop(){
     servo2.write(angle);
     pos2=angle;
   }
+  delay(100);
 
   // Prevent both valves from closing at same time
   if (pos1 == 0 && pos2 == 0){
@@ -206,6 +207,7 @@ void loop(){
     pos1=38;
     servo2.write(38);
     pos2=38;
+    delay(100);
   }
 
   if (digitalRead(end_pin) == HIGH){
