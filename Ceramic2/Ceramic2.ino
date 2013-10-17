@@ -13,13 +13,15 @@
 #define end_pin 11
 
 // Temperature sensors
-int target_temp;
+float target_temp;
 float temp_cld1;
 float temp_cld2;
 float temp_cld_avr;
 float temp_hot1;
 float temp_hot2;
 float temp_hot_avr;
+float temp_cld_tmp;
+float temp_hot_tmp;
 
 // Flow meters
 volatile unsigned int pulse_count1;
@@ -45,6 +47,10 @@ float hot_ratio;
 void setup(){
   Serial.begin(9600);
   analogReference(EXTERNAL);
+  
+  // Temperature
+  temp_cld_tmp=15.0;
+  temp_hot_tmp=56.5;
 
   // Servo
   servo1.attach(servo_pin1);
@@ -53,7 +59,7 @@ void setup(){
   pos2=0;
   
   // Target temperature
-  target_temp=27;
+  target_temp=27.0;
   pinMode(target_pin, INPUT);
   digitalWrite(target_pin, LOW);
 
@@ -121,16 +127,22 @@ void pulse_counter2(){
 
 void loop(){
   if (digitalRead(target_pin) == HIGH){
-    target_temp=30;
+    target_temp=35.0;
   }
 
-  temp_cld1=temp_get(temp_pin_cld1);
-  temp_cld2=temp_get(temp_pin_cld2);
-  temp_hot1=temp_get(temp_pin_hot1);
-  temp_hot2=temp_get(temp_pin_hot2);
+  if(millis() < 10000){
+    temp_cld_avr=temp_cld_tmp;
+    temp_hot_avr=temp_hot_tmp;
+  } else{
+    temp_cld1=temp_get(temp_pin_cld1);
+    temp_cld2=temp_get(temp_pin_cld2);
+    temp_hot1=temp_get(temp_pin_hot1);
+    temp_hot2=temp_get(temp_pin_hot2);
 
-  temp_cld_avr=(temp_cld1+temp_cld2)/2; // Used var
-  temp_hot_avr=(temp_hot1+temp_hot2)/2; // Used var
+    temp_cld_avr=(temp_cld1+temp_cld2)/2; // Used var
+    temp_hot_avr=(temp_hot1+temp_hot2)/2; // Used var
+  }
+  
   Serial.print(temp_cld_avr); Serial.println(" degrees C (cold)");
   Serial.print(temp_hot_avr); Serial.println(" degrees C (hot)");
   delay(100);
@@ -138,6 +150,11 @@ void loop(){
   if((millis()-old_time) > 1000){ 
     detachInterrupt(0);
     detachInterrupt(1);
+	
+	if(millis() < 10000){
+	  temp_cld_tmp+=0.5;
+	  temp_hot_tmp-=0.5;
+	}
 
     flow_litres1=pulse_count1/3300;
     flow_litres2=pulse_count2/3300;
@@ -168,6 +185,10 @@ void loop(){
   float temp_ratio_tmp2=temp_ratio_tmp1/(temp_ratio_tmp1+1);
   float temp_ratio=temp_ratio_tmp2/(1-temp_ratio_tmp2); // Used var
   float flow_ratio=(flow_rate_hot/60)/(flow_rate_cld/60); // Used var
+
+  Serial.print(target_temp);Serial.println(" target");
+  Serial.print(flow_ratio);Serial.println(" ratio(flow)");
+  Serial.print(temp_ratio);Serial.println(" ratio(temp)");
   
   if (temp_ratio < flow_ratio){
     hot_ratio=temp_ratio/flow_ratio; // Output var
