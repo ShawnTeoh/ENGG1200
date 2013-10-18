@@ -185,7 +185,7 @@ void loop(){
     attachInterrupt(1, pulse_counter2, FALLING);
   }
 
-  // DOING: Translate control algorithm into Arduino code
+  // Control algorithm
   float temp_ratio_tmp1=(target_temp-temp_cld_avr)/(temp_hot_avr-target_temp);
   float temp_ratio_tmp2=temp_ratio_tmp1/(temp_ratio_tmp1+1);
   float temp_ratio=temp_ratio_tmp2/(1-temp_ratio_tmp2); // Used var
@@ -211,8 +211,8 @@ void loop(){
     hot_ratio=1.0; // Output var
   }
 
-  // servo2: 5 (open) - 80 (closed)
   // servo1: 65 (open) - 140 (closed)
+  // servo2: 5 (open) - 80 (closed)
   if (cld_ratio == 1.0){
     servo1.write(65);
     pos1=65;
@@ -247,7 +247,7 @@ void loop(){
   }
 
   if (digitalRead(end_pin) == HIGH){
-    // TODO: Shut down sequence
+    // Shut down sequence
     servo1.write(140);
     servo2.write(80);
     while(1);
