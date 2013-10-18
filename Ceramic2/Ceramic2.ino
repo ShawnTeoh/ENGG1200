@@ -47,7 +47,7 @@ float hot_ratio;
 void setup(){
   Serial.begin(9600);
   analogReference(EXTERNAL);
-  
+
   // Temperature
   temp_cld_tmp=15.0;
   temp_hot_tmp=56.5;
@@ -57,7 +57,7 @@ void setup(){
   servo2.attach(servo_pin2);
   pos1=0;
   pos2=0;
-  
+
   // Target temperature
   target_temp=27.0;
   pinMode(target_pin, INPUT);
@@ -82,7 +82,7 @@ void setup(){
   digitalWrite(flow_pin_hot,HIGH);
   attachInterrupt(0, pulse_counter1, FALLING);
   attachInterrupt(1, pulse_counter2, FALLING);
-  
+
   // Control system
   cld_ratio=0.0;
   hot_ratio=0.0;
@@ -96,10 +96,11 @@ int round_angle(float ratio){
   float angle_tmp=ratio*75;
   int angle_trunc=(int) angle_tmp;
   float diff=angle_tmp-angle_trunc;
-  
+
   if (diff <= 0.5){
     return floor(angle_tmp);
-  } else{
+  } 
+  else{
     return ceil(angle_tmp);
   }
 }
@@ -133,7 +134,8 @@ void loop(){
   if(millis() < 10000){
     temp_cld_avr=temp_cld_tmp;
     temp_hot_avr=temp_hot_tmp;
-  } else{
+  } 
+  else{
     temp_cld1=temp_get(temp_pin_cld1);
     temp_cld2=temp_get(temp_pin_cld2);
     temp_hot1=temp_get(temp_pin_hot1);
@@ -142,38 +144,41 @@ void loop(){
     temp_cld_avr=(temp_cld1+temp_cld2)/2; // Used var
     temp_hot_avr=(temp_hot1+temp_hot2)/2; // Used var
   }
-  
-  Serial.print(temp_cld_avr); Serial.println(" degrees C (cold)");
-  Serial.print(temp_hot_avr); Serial.println(" degrees C (hot)");
+
+  Serial.print(temp_cld_avr); 
+  Serial.println(" degrees C (cold)");
+  Serial.print(temp_hot_avr); 
+  Serial.println(" degrees C (hot)");
   delay(100);
 
   if((millis()-old_time) > 1000){ 
     detachInterrupt(0);
     detachInterrupt(1);
-	
-	if(millis() < 10000){
-	  temp_cld_tmp+=0.5;
-	  temp_hot_tmp-=0.5;
-	}
 
-    flow_litres1=pulse_count1/3300;
-    flow_litres2=pulse_count2/3300;
-    
-    flow_litres1=flow_litres1/old_time*60;
-    flow_litres2=flow_litres2/old_time*60;
-    
-    flow_rate_cld=flow_litres1*60; // Used var
-    flow_rate_hot=flow_litres2*60; // Used var
+    unsigned long int cur_time=millis()-old_time;
+   
+    flow_litres1=(pulse_count1/(cur_time/1000.0))/3300;
+    flow_litres2=(pulse_count2/(cur_time/1000.0))/3300;
 
-    old_time=millis();
+    flow_rate_cld=1.0*flow_litres1*60; // Used var
+    flow_rate_hot=1.0*flow_litres2*60; // Used var
 
     total_litres+=flow_litres1;
     total_litres+=flow_litres2;
 
-    Serial.print(flow_rate_cld); Serial.println(" litres/min (cold)");
-    Serial.print(flow_rate_hot); Serial.println(" litres/min (hot)");
-    Serial.print(total_litres); Serial.println(" litres (total)");
+    Serial.print(flow_rate_cld); 
+    Serial.println(" litres/min (cold)");
+    Serial.print(flow_rate_hot); 
+    Serial.println(" litres/min (hot)");
+    Serial.print(total_litres); 
+    Serial.println(" litres (total)");
+    
+    if(millis() < 10000){
+      temp_cld_tmp+=0.5;
+      temp_hot_tmp-=0.5;
+    }
 
+    old_time=millis();
     pulse_count1=0;
     pulse_count2=0;
     attachInterrupt(0, pulse_counter1, FALLING);
@@ -186,16 +191,20 @@ void loop(){
   float temp_ratio=temp_ratio_tmp2/(1-temp_ratio_tmp2); // Used var
   float flow_ratio=(flow_rate_hot/60)/(flow_rate_cld/60); // Used var
 
-  Serial.print(target_temp);Serial.println(" target");
-  Serial.print(flow_ratio);Serial.println(" ratio(flow)");
-  Serial.print(temp_ratio);Serial.println(" ratio(temp)");
-  
+  Serial.print(target_temp);
+  Serial.println(" target");
+  Serial.print(flow_ratio);
+  Serial.println(" ratio(flow)");
+  Serial.print(temp_ratio);
+  Serial.println(" ratio(temp)");
+
   if (temp_ratio < flow_ratio){
     hot_ratio=temp_ratio/flow_ratio; // Output var
     angle=round_angle(hot_ratio)-80;
     angle=abs(angle); // Output var
     cld_ratio=1.0; // Output var
-  } else{
+  } 
+  else{
     cld_ratio=flow_ratio/temp_ratio; // Output var
     angle=round_angle(cld_ratio)-140;
     angle=abs(angle); // Output var
@@ -207,7 +216,8 @@ void loop(){
   if (cld_ratio == 1.0){
     servo1.write(65);
     pos1=65;
-  } else{
+  } 
+  else{
     servo1.write(angle);
     pos1=angle;
   }
@@ -215,14 +225,17 @@ void loop(){
   if (hot_ratio == 1.0){
     servo2.write(5);
     pos2=5;
-  } else{
+  } 
+  else{
     servo2.write(angle);
     pos2=angle;
   }
   delay(100);
-  
-  Serial.print(pos1);Serial.println(" angle (cld)");
-  Serial.print(pos2);Serial.println(" angle (hot)");
+
+  Serial.print(pos1);
+  Serial.println(" angle (cld)");
+  Serial.print(pos2);
+  Serial.println(" angle (hot)");
 
   // Prevent both valves from closing at same time
   if (pos1 == 140 && pos2 == 80){
@@ -240,4 +253,3 @@ void loop(){
     while(1);
   }
 }
-
