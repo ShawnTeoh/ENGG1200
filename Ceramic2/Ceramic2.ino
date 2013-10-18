@@ -59,7 +59,7 @@ void setup(){
   pos2=0;
 
   // Target temperature
-  target_temp=27.0;
+  target_temp=30.0;
   pinMode(target_pin, INPUT);
   digitalWrite(target_pin, LOW);
 
@@ -128,7 +128,7 @@ void pulse_counter2(){
 
 void loop(){
   if (digitalRead(target_pin) == HIGH){
-    target_temp=35.0;
+    target_temp=15.0;
   }
 
   if(millis() < 10000){
