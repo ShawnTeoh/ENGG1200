@@ -223,8 +223,8 @@ void loop(){
   }
 
   if (hot_ratio == 1.0){
-    servo2.write(5);
-    pos2=5;
+    servo2.write(40);
+    pos2=40;
   } 
   else{
     servo2.write(angle);
@@ -238,11 +238,11 @@ void loop(){
   Serial.println(" angle (hot)");
 
   // Prevent both valves from closing at same time
-  if (pos1 == 140 && pos2 == 80){
+  if (pos1 == 140 && pos2 == 115){
     servo1.write(95);
-    pos1=38;
-    servo2.write(43);
-    pos2=38;
+    pos1=95;
+    servo2.write(78);
+    pos2=78;
     delay(100);
   }
 
