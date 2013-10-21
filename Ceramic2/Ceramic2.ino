@@ -97,7 +97,7 @@ int round_angle(float ratio){
   int angle_trunc=(int) angle_tmp;
   float diff=angle_tmp-angle_trunc;
 
-  if (diff <= 0.5){
+  if (diff < 0.5){
     return floor(angle_tmp);
   } 
   else{
