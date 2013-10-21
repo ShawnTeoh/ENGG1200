@@ -200,7 +200,7 @@ void loop(){
 
   if (temp_ratio < flow_ratio){
     hot_ratio=temp_ratio/flow_ratio; // Output var
-    angle=round_angle(hot_ratio)-80;
+    angle=round_angle(hot_ratio)-115;
     angle=abs(angle); // Output var
     cld_ratio=1.0; // Output var
   } 
@@ -212,7 +212,7 @@ void loop(){
   }
 
   // servo1: 65 (open) - 140 (closed)
-  // servo2: 5 (open) - 80 (closed)
+  // servo2: 40 (open) - 115 (closed)
   if (cld_ratio == 1.0){
     servo1.write(65);
     pos1=65;
@@ -248,8 +248,8 @@ void loop(){
 
   if (digitalRead(end_pin) == HIGH){
     // Shut down sequence
-    servo1.write(140);
-    servo2.write(80);
+    servo1.write(150);
+    servo2.write(125);
     while(1);
   }
 }
